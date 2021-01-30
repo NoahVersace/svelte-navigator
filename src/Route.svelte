@@ -29,6 +29,7 @@
 
 	export let path = "";
 	export let component = null;
+	export let preload = null;
 	export let meta = {};
 	export let primary = true;
 
@@ -36,7 +37,13 @@
 
 	const id = createId();
 
-	const { registerRoute, unregisterRoute, activeRoute } = getContext(ROUTER);
+	const {
+		registerRoute,
+		unregisterRoute,
+		activeRoute,
+		previousRoute,
+		preloading,
+	} = getContext(ROUTER);
 	const parentBase = useRouteBase();
 	const location = useLocation();
 	const focusElement = writable(null);
@@ -44,6 +51,23 @@
 	// In SSR we cannot wait for $activeRoute to update,
 	// so we use the match returned from `registerRoute` instead
 	let ssrMatch;
+
+	let isComponentLoaded = !preload;
+
+	async function preloadComponent() {
+		preloading.set(true);
+		const module = await preload();
+
+		if (!module) return;
+
+		const moduleComponent = module.default;
+		const modulePreload = module.preload;
+		await modulePreload();
+
+		component = moduleComponent;
+		isComponentLoaded = true;
+		preloading.set(false);
+	}
 
 	const route = writable();
 	$: {
@@ -54,6 +78,7 @@
 			id,
 			path,
 			meta,
+			isComponentLoaded,
 			// If no path prop is given, this Route will act as the default Route
 			// that is rendered if no other Route in the Router is a match
 			default: isDefault,
@@ -71,6 +96,16 @@
 	}
 
 	$: isActive = !!(ssrMatch || ($activeRoute && $activeRoute.id === id));
+
+	$: if (isActive && !isComponentLoaded) preloadComponent();
+
+	$: isPreloadPlaceholder =
+		$previousRoute &&
+		$previousRoute.id === id &&
+		!$activeRoute.isComponentLoaded;
+
+	// $: console.log("previous", $previousRoute);
+	// $: console.log("active:", $activeRoute);
 
 	const params = writable({});
 	$: if (isActive) {
@@ -94,7 +129,7 @@
 </script>
 
 <div style="display:none;" aria-hidden="true" data-svnav-route-start={id} />
-{#if isActive}
+{#if (isActive || isPreloadPlaceholder) && isComponentLoaded}
 	<Router {primary}>
 		<!--
       `$params` always returns `{}` in SSR in Route, because it will

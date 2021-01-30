@@ -99,6 +99,11 @@ export function useHistory() {
 	return history;
 }
 
+export function usePreloading() {
+	const { preloading } = getContext(ROUTER);
+	return preloading;
+}
+
 /**
  * Access the base of the parent Route.
  */

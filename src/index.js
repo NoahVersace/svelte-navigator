@@ -22,4 +22,5 @@ export {
 	useMatch,
 	useParams,
 	useFocus,
+	usePreloading,
 } from "./hooks";

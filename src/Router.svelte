@@ -55,7 +55,9 @@
 	const announcementText = writable("");
 
 	const routes = writable([]);
+	const previousRoute = writable(null);
 	const activeRoute = writable(null);
+	const preloading = writable(false);
 	// Used in SSR to synchronously set that a Route is active.
 	let hasActiveRoute = false;
 
@@ -133,6 +135,12 @@
 	// pick an active Route after all Routes have been registered.
 	$: {
 		const bestMatch = pick($routes, $location.pathname);
+
+		// If the new route has a different id save the current one as the previous route
+		if (bestMatch && $activeRoute && bestMatch.id !== $activeRoute.id) {
+			previousRoute.set($activeRoute);
+		}
+
 		activeRoute.set(bestMatch);
 	}
 
@@ -177,7 +185,9 @@
 	}
 
 	setContext(ROUTER, {
+		previousRoute,
 		activeRoute,
+		preloading,
 		registerRoute,
 		unregisterRoute,
 		manageFocus,
