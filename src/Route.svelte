@@ -102,6 +102,7 @@
 	$: isPreloadPlaceholder =
 		$previousRoute &&
 		$previousRoute.id === id &&
+		$activeRoute &&
 		!$activeRoute.isComponentLoaded;
 
 	// $: console.log("previous", $previousRoute);
