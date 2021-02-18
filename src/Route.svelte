@@ -62,7 +62,7 @@
 
 		const moduleComponent = module.default;
 		const modulePreload = module.preload;
-		await modulePreload();
+		await modulePreload($params);
 
 		component = moduleComponent;
 		isComponentLoaded = true;
@@ -89,6 +89,48 @@
 			primary,
 			focusElement,
 		};
+		route.set(updatedRoute);
+		// If we're in SSR mode and the Route matches,
+		// `registerRoute` will return the match
+		ssrMatch = registerRoute(updatedRoute);
+	}
+
+	function compare(object1, object2) {
+		const params1String = JSON.stringify(object1);
+		const params2String = JSON.stringify(object2);
+
+		return params1String === params2String;
+	}
+
+	$: if (isActive) {
+		const { params: activeParams } = ssrMatch || $activeRoute;
+		if (!compare($params, activeParams)) {
+			updateRoute();
+		}
+		params.set(activeParams);
+	}
+
+	function updateRoute() {
+		isComponentLoaded = false;
+		// The route store will be re-computed whenever props, location or parentBase change
+		const isDefault = path === "";
+		const rawBase = join($parentBase, path);
+		const updatedRoute = {
+			id,
+			path,
+			meta,
+			isComponentLoaded,
+			// If no path prop is given, this Route will act as the default Route
+			// that is rendered if no other Route in the Router is a match
+			default: isDefault,
+			fullPath: isDefault ? "" : rawBase,
+			base: isDefault
+				? $parentBase
+				: extractBaseUri(rawBase, $location.pathname),
+			primary,
+			focusElement,
+		};
+
 		route.set(updatedRoute);
 		// If we're in SSR mode and the Route matches,
 		// `registerRoute` will return the match
