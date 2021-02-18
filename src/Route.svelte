@@ -57,7 +57,6 @@
 	async function preloadComponent() {
 		preloading.set(true);
 		const module = await preload();
-
 		if (!module) return;
 
 		const moduleComponent = module.default;
@@ -105,7 +104,8 @@
 	$: if (isActive) {
 		const { params: activeParams } = ssrMatch || $activeRoute;
 		if (!compare($params, activeParams)) {
-			updateRoute();
+			// updateRoute();
+			preloadComponent();
 		}
 		params.set(activeParams);
 	}
