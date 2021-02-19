@@ -32,6 +32,7 @@
 	export let preload = null;
 	export let meta = {};
 	export let primary = true;
+	export let guard = null;
 
 	usePreflightCheck(ROUTE_ID, $$props);
 
@@ -55,6 +56,9 @@
 	let isComponentLoaded = !preload;
 
 	async function preloadComponent() {
+		// If guard returns false cancel preloading
+		if (guard && !guard()) return;
+
 		preloading.set(true);
 		const module = await preload();
 		if (!module) return;
